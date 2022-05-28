@@ -17,6 +17,9 @@ test:
 watch-tests:
     watch . { cargo tests } --glob=**/*.rs
 
-publish:
+build-release:
     cargo build --release
     @$"Build size: (ls target/release/templater | get size)"
+
+publish-to-local-bin: build-release
+    cp target/release/templater ~/bin/

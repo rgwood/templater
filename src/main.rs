@@ -1,18 +1,13 @@
-use std::{collections::HashMap, path::PathBuf, fs};
+use std::{collections::HashMap, env::current_dir, fs, path::PathBuf};
 
 use anyhow::Result;
 use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
-use handlebars::{template::Template, Handlebars};
+use handlebars::{template::{Template, self}, Handlebars};
 
 fn main() -> Result<()> {
-    let mut variables = HashMap::new();
-    variables.insert(
-        "name".to_string(),
-        "Reilly".to_string(),
-    );
+    let mut variables = template_variables()?;
 
     let templates = all_templates()?;
-
 
     let template_names: Vec<&str> = templates.iter()
         .map(|t| t.file_name().unwrap().to_str().unwrap())
@@ -25,45 +20,67 @@ fn main() -> Result<()> {
         .interact()
         .expect("Failed to get user input");
 
-    let selection = &templates[selection_index];
+    let selected_template = &templates[selection_index];
 
-    let original_file_name = selection.file_name().unwrap();
-
-    let file_name: String = Input::with_theme(&ColorfulTheme::default())
+    let original_file_name = selected_template.file_name().unwrap();
+    let new_file_name: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("What name should the new file be?")
         // .default(selection)
         .with_initial_text(original_file_name.to_string_lossy())
         .interact_text()
         .unwrap();
 
-    eprintln!("File name: {file_name}");
+    // eprintln!("File name: {file_name}");
 
 
+    let template_string = fs::read_to_string(selected_template)?;
 
-    let template_string = "Hello {{name}}";
-
-
-    let template = Template::compile(template_string).unwrap();
-    // TODO: look at elements in template
-    println!("{}", Handlebars::new().render_template(template_string, &variables)?);
-
-
-
-
-
-
+    // let template_string = "Hello {{ current_dir_name }}";
+    let template = Template::compile(&template_string).unwrap();
 
     for element in template.elements {
         match element {
             handlebars::template::TemplateElement::Expression(e) => {
-                let name = &e.name.as_name();
-                dbg!(name);
+                let name = e.name.as_name().expect("could not get name");
+                if !variables.contains_key(name) {
+                    let msg = format!("Variable '{name}' found in template but not set. What should it be set to?");
+                    let value: String = Input::with_theme(&ColorfulTheme::default())
+                        .with_prompt(msg)
+                        .allow_empty(true)
+                        .interact_text()?;
+
+                    variables.insert(name.to_string(), value);
+                }
             }
             _ => {}
         }
     }
 
+    let rendered_template = Handlebars::new().render_template(&template_string, &variables)?;
+    println!("{rendered_template}");
+
+    let output_path = current_dir()?.join(new_file_name);
+    fs::write(output_path, rendered_template)?;
+
     Ok(())
+}
+
+fn template_variables() -> Result<HashMap<String, String>> {
+    let mut variables = HashMap::<String, String>::new();
+    let current_dir = current_dir()?;
+    let current_dir_string = current_dir.to_string_lossy().to_string();
+    variables.insert("pwd".to_string(), current_dir_string.clone());
+    variables.insert("current_dir_path".to_string(), current_dir_string.clone());
+    variables.insert(
+        "current_dir_name".to_string(),
+        current_dir
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .to_string(),
+    );
+
+    Ok(variables)
 }
 
 fn all_templates() -> Result<Vec<PathBuf>> {
@@ -78,6 +95,7 @@ fn all_templates() -> Result<Vec<PathBuf>> {
             }
             false
         })
-        .map(|t| t.path()).collect();
+        .map(|t| t.path())
+        .collect();
     Ok(templates)
 }
