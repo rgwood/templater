@@ -2,14 +2,15 @@ use std::{collections::HashMap, env::current_dir, fs, path::PathBuf};
 
 use anyhow::Result;
 use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
-use handlebars::{template::{Template, self}, Handlebars};
+use handlebars::{template::Template, Handlebars};
 
 fn main() -> Result<()> {
     let mut variables = template_variables()?;
 
     let templates = all_templates()?;
 
-    let template_names: Vec<&str> = templates.iter()
+    let template_names: Vec<&str> = templates
+        .iter()
         .map(|t| t.file_name().unwrap().to_str().unwrap())
         .collect();
 
@@ -32,27 +33,23 @@ fn main() -> Result<()> {
 
     // eprintln!("File name: {file_name}");
 
-
     let template_string = fs::read_to_string(selected_template)?;
 
     // let template_string = "Hello {{ current_dir_name }}";
     let template = Template::compile(&template_string).unwrap();
 
     for element in template.elements {
-        match element {
-            handlebars::template::TemplateElement::Expression(e) => {
-                let name = e.name.as_name().expect("could not get name");
-                if !variables.contains_key(name) {
-                    let msg = format!("Variable '{name}' found in template but not set. What should it be set to?");
-                    let value: String = Input::with_theme(&ColorfulTheme::default())
-                        .with_prompt(msg)
-                        .allow_empty(true)
-                        .interact_text()?;
+        if let handlebars::template::TemplateElement::Expression(e) = element {
+            let name = e.name.as_name().expect("could not get name");
+            if !variables.contains_key(name) {
+                let msg = format!("Variable '{name}' found in template but not set. What should it be set to?");
+                let value: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt(msg)
+                    .allow_empty(true)
+                    .interact_text()?;
 
-                    variables.insert(name.to_string(), value);
-                }
+                variables.insert(name.to_string(), value);
             }
-            _ => {}
         }
     }
 
@@ -70,7 +67,7 @@ fn template_variables() -> Result<HashMap<String, String>> {
     let current_dir = current_dir()?;
     let current_dir_string = current_dir.to_string_lossy().to_string();
     variables.insert("pwd".to_string(), current_dir_string.clone());
-    variables.insert("current_dir_path".to_string(), current_dir_string.clone());
+    variables.insert("current_dir_path".to_string(), current_dir_string);
     variables.insert(
         "current_dir_name".to_string(),
         current_dir

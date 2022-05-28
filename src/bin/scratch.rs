@@ -1,9 +1,11 @@
-use std::{path::{self, PathBuf}, fs};
+use std::{
+    fs,
+    path::PathBuf,
+};
 
 use anyhow::Result;
 
 fn main() -> Result<()> {
-
     let templates = all_templates()?;
 
     for template in templates {
@@ -27,6 +29,7 @@ fn all_templates() -> Result<Vec<PathBuf>> {
             }
             false
         })
-        .map(|t| t.path()).collect();
+        .map(|t| t.path())
+        .collect();
     Ok(templates)
 }
