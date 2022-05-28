@@ -26,16 +26,11 @@ fn main() -> Result<()> {
     let original_file_name = selected_template.file_name().unwrap();
     let new_file_name: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("What name should the new file be?")
-        // .default(selection)
         .with_initial_text(original_file_name.to_string_lossy())
         .interact_text()
         .unwrap();
 
-    // eprintln!("File name: {file_name}");
-
     let template_string = fs::read_to_string(selected_template)?;
-
-    // let template_string = "Hello {{ current_dir_name }}";
     let template = Template::compile(&template_string).unwrap();
 
     for element in template.elements {
