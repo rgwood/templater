@@ -1,6 +1,5 @@
 set shell := ["nu", "-c"]
 
-
 watch:
     watch . { cargo run } --glob=**/*.rs
 
@@ -20,9 +19,11 @@ test:
 watch-tests:
     watch . { cargo tests } --glob=**/*.rs
 
+expected_filename := if os_family() == "windows" { "templater.exe" } else { "templater" }
+
 build-release:
     cargo build --release
-    @$"Build size: (ls target/release/templater | get size)"
+    @$"Build size: (ls target/release/{{ expected_filename }} | get size)"
 
 publish-to-local-bin: build-release
-    cp target/release/templater ~/bin/
+    cp target/release/{{ expected_filename }} ~/bin/

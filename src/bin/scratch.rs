@@ -1,18 +1,26 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_imports)]
+
 use std::{
     fs,
-    path::PathBuf,
+    path::PathBuf, collections::HashMap,
 };
 
 use anyhow::Result;
+use handlebars::{Handlebars, template};
 
 fn main() -> Result<()> {
-    let templates = all_templates()?;
 
-    for template in templates {
-        // god, dealing with OsStrings is annoying
-        // println!("{}", template.to_str().unwrap());
-        println!("{}", template.file_name().unwrap().to_str().unwrap());
-    }
+    render_template();
+
+    // let templates = all_templates()?;
+
+    // for template in templates {
+    //     // god, dealing with OsStrings is annoying
+    //     // println!("{}", template.to_str().unwrap());
+    //     println!("{}", template.file_name().unwrap().to_str().unwrap());
+    // }
 
     Ok(())
 }
@@ -32,4 +40,22 @@ fn all_templates() -> Result<Vec<PathBuf>> {
         .map(|t| t.path())
         .collect();
     Ok(templates)
+}
+
+fn render_template() {
+
+    let template_string = r#"{{#if windows}}on windows{{else}}not windows{{/if}} \{{ foo }} "#;
+
+    let mut variables = HashMap::<&str, &str>::new();
+
+    #[cfg(target_os = "windows")]
+    variables.insert("windows", "true");
+    #[cfg(target_os = "linux")]
+    variables.insert("linux", "true");
+    #[cfg(target_os = "macos")]
+    variables.insert("macos", "true");
+
+
+    let rendered_template = Handlebars::new().render_template(&template_string, &variables).unwrap();
+    println!("{rendered_template}");
 }

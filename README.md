@@ -14,5 +14,6 @@ Templater looks for text files in `~/dotfiles/templates`. Files can use Handleba
 
 - `pwd` or `current_dir_path`: working directory (full path)
 - `current_dir_name`: working directory name
+- `linux`/`windows`/`macos`: set to `true` depending on the current OS
 
 If a variable in a template file is not already set, the user will be prompted to fill in a value.

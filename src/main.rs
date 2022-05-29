@@ -72,6 +72,13 @@ fn default_variables() -> Result<HashMap<String, String>> {
             .to_string(),
     );
 
+    #[cfg(target_os = "windows")]
+    variables.insert("windows".to_string(), "true".to_string());
+    #[cfg(target_os = "linux")]
+    variables.insert("linux".to_string(), "true".to_string());
+    #[cfg(target_os = "macos")]
+    variables.insert("macos".to_string(), "true".to_string());
+
     Ok(variables)
 }
 
