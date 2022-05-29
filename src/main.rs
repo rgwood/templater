@@ -5,7 +5,7 @@ use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
 use handlebars::{template::Template, Handlebars};
 
 fn main() -> Result<()> {
-    let mut variables = template_variables()?;
+    let mut variables = default_variables()?;
 
     let templates = all_templates()?;
 
@@ -57,7 +57,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn template_variables() -> Result<HashMap<String, String>> {
+fn default_variables() -> Result<HashMap<String, String>> {
     let mut variables = HashMap::<String, String>::new();
     let current_dir = current_dir()?;
     let current_dir_string = current_dir.to_string_lossy().to_string();
