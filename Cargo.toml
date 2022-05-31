@@ -6,6 +6,10 @@ default-run = "templater"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "scratch"
+path = "src/scratch.rs"
+
 [dependencies]
 anyhow = "1.0.57"
 dialoguer = {version = "0.10.1", features = ["fuzzy-select"] }
