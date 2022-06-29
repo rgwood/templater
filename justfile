@@ -17,7 +17,7 @@ test:
     cargo test
 
 watch-tests:
-    watch . { cargo tests } --glob=**/*.rs
+    watch . { cargo test } --glob=**/*.rs
 
 expected_filename := if os_family() == "windows" { "templater.exe" } else { "templater" }
 

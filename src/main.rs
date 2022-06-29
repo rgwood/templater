@@ -22,22 +22,33 @@ fn main() -> Result<()> {
         .expect("Failed to get user input");
 
     let selected_template = &templates[selection_index];
+    let template_string = fs::read_to_string(selected_template)?;
 
-    let original_file_name = selected_template.file_name().unwrap();
+    let file_header = get_header(&template_string);
+    let template_string = without_header(&template_string);
+
+    let original_file_name = selected_template
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+    let suggested_file_name = file_header.get("filename").unwrap_or(&original_file_name);
+
     let new_file_name: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("What name should the new file be?")
-        .with_initial_text(original_file_name.to_string_lossy())
+        .with_initial_text(suggested_file_name)
         .interact_text()
-        .unwrap();
+        .expect("failed to get file name");
 
-    let template_string = fs::read_to_string(selected_template)?;
     let template = Template::compile(&template_string).unwrap();
 
     for element in template.elements {
         if let handlebars::template::TemplateElement::Expression(e) = element {
             let name = e.name.as_name().expect("could not get name");
             if !variables.contains_key(name) {
-                let msg = format!("Variable '{name}' found in template but not set. What should it be set to?");
+                let msg = format!(
+                    "Variable '{name}' found in template but not set. What should it be set to?"
+                );
                 let value: String = Input::with_theme(&ColorfulTheme::default())
                     .with_prompt(msg)
                     .allow_empty(true)
@@ -97,4 +108,99 @@ fn all_templates() -> Result<Vec<PathBuf>> {
         .map(|t| t.path())
         .collect();
     Ok(templates)
+}
+
+fn without_header(file_contents: &str) -> String {
+    let mut result = String::new();
+
+    let mut past_header = false;
+
+    for line in file_contents.lines() {
+        let trimmed = line.trim();
+
+        let is_header_line = trimmed.is_empty() || trimmed.contains("templater.");
+        if !past_header && !is_header_line {
+            past_header = true;
+        }
+
+        if past_header {
+            result.push_str(line);
+            result.push_str("\n");
+        }
+    }
+
+    result
+}
+
+fn get_header(file_contents: &str) -> HashMap<String, String> {
+    let raw = get_raw_header(file_contents);
+
+    if let Some(raw) = raw {
+        if let Ok(parsed) = parse_header(&raw) {
+            return parsed;
+        }
+    }
+
+    HashMap::new()
+}
+
+fn get_raw_header(file_contents: &str) -> Option<Vec<String>> {
+    let mut ret = Vec::<String>::new();
+
+    for line in file_contents.lines() {
+        let line = line.trim();
+
+        if line.is_empty() {
+            continue;
+        }
+
+        if line.starts_with("# templater") || line.starts_with("#templater") {
+            ret.push(line.to_string());
+        }
+    }
+
+    if ret.is_empty() {
+        None
+    } else {
+        Some(ret)
+    }
+}
+
+fn parse_header(header: &Vec<String>) -> Result<HashMap<String, String>> {
+    let mut variables = HashMap::<String, String>::new();
+
+    for line in header {
+        let line = line.trim();
+
+        // ex: # templater.filename = index.ts
+        let re = regex::Regex::new(r"# ?templater\.(\w*) ?= ?(.*)").unwrap();
+
+        // usually there will only be 1
+        for cap in re.captures_iter(line) {
+            variables.insert(cap[1].to_string(), cap[2].to_string());
+        }
+    }
+    Ok(variables)
+}
+
+#[test]
+fn test_parse_filename() {
+    let header = get_header(
+        "
+    # templater.filename = index.ts
+    foo bar",
+    );
+
+    assert_eq!(header.get("filename").unwrap(), "index.ts");
+}
+
+#[test]
+fn test_without_header() {
+    let without_header = without_header(
+        "
+    # templater.filename = index.ts
+    foo bar",
+    );
+
+    assert_eq!(without_header.trim(), "foo bar");
 }

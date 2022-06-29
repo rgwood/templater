@@ -17,3 +17,9 @@ Templater looks for text files in `~/dotfiles/templates`. Files can use Handleba
 - `linux`/`windows`/`macos`: set to `true` depending on the current OS
 
 If a variable in a template file is not already set, the user will be prompted to fill in a value.
+
+Files can be given key-value headers by adding lines like this to the top:
+
+```
+# templater.filename = foo
+```
