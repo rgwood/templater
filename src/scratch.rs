@@ -2,16 +2,12 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-use std::{
-    fs,
-    path::PathBuf, collections::HashMap,
-};
+use std::{collections::HashMap, fs, path::PathBuf};
 
 use anyhow::Result;
-use handlebars::{Handlebars, template};
+use handlebars::{template, Handlebars};
 
 fn main() -> Result<()> {
-
     render_template();
 
     // let templates = all_templates()?;
@@ -43,7 +39,6 @@ fn all_templates() -> Result<Vec<PathBuf>> {
 }
 
 fn render_template() {
-
     let template_string = r#"{{#if windows}}on windows{{else}}not windows{{/if}} \{{ foo }} "#;
 
     let mut variables = HashMap::<&str, &str>::new();
@@ -55,7 +50,8 @@ fn render_template() {
     #[cfg(target_os = "macos")]
     variables.insert("macos", "true");
 
-
-    let rendered_template = Handlebars::new().render_template(&template_string, &variables).unwrap();
+    let rendered_template = Handlebars::new()
+        .render_template(template_string, &variables)
+        .unwrap();
     println!("{rendered_template}");
 }
