@@ -23,3 +23,8 @@ Files can be given key-value headers by adding lines like this to the top:
 ```
 # templater.filename = foo
 ```
+
+
+### To Do
+
+ - [ ] Support overwriting files (after prompting the user)
