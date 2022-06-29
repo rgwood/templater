@@ -9,9 +9,17 @@ fn main() -> Result<()> {
 
     let templates = get_templates(template_dir())?;
 
-    let template_names: Vec<&str> = templates
+    let template_names: Vec<String> = templates
         .iter()
-        .map(|t| t.path().file_name().unwrap().to_str().unwrap())
+        .map(|t| {
+            let file_name = t.path().file_name().unwrap().to_string_lossy();
+            match t {
+                TemplateItem::File { .. } => file_name.to_string(),
+                TemplateItem::FileCollection { files, .. } => {
+                    format!("{} ({} files)", file_name, files.len())
+                }
+            }
+        })
         .collect();
 
     let selection_index = FuzzySelect::with_theme(&ColorfulTheme::default())
