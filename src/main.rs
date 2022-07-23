@@ -1,10 +1,27 @@
-use std::{collections::HashMap, env::current_dir, fs, path::PathBuf};
+mod utils;
 
 use anyhow::Result;
+use clap::Parser;
 use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
 use handlebars::{template::Template, Handlebars};
+use std::{collections::HashMap, env::current_dir, fs, path::PathBuf};
+use utils::expand_home_dir;
+
+/// Reilly's custom templating tool
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    #[clap(short, long, value_parser, default_value_t = false)]
+    verbose: bool,
+}
 
 fn main() -> Result<()> {
+    let args = Args::parse();
+
+    if args.verbose {
+        dbg!(&args);
+    }
+
     let mut variables = default_variables()?;
 
     let templates = get_templates(template_dir())?;
@@ -33,11 +50,11 @@ fn main() -> Result<()> {
 
     match selected_template {
         TemplateItem::File { path } => {
-            write_item_to_disk_interactive(path, &mut variables)?;
+            write_item_to_disk_interactive(path, &mut variables, args.verbose)?;
         }
         TemplateItem::FileCollection { files, .. } => {
             for file in files {
-                write_item_to_disk_interactive(file, &mut variables)?;
+                write_item_to_disk_interactive(file, &mut variables, args.verbose)?;
             }
         }
     }
@@ -48,16 +65,40 @@ fn main() -> Result<()> {
 fn write_item_to_disk_interactive(
     template_item_path: &PathBuf,
     variables: &mut HashMap<String, String>,
+    verbose: bool,
 ) -> Result<(), anyhow::Error> {
     let template_string = fs::read_to_string(template_item_path)?;
+    dbg!(&template_string);
+
     let file_header = get_header(&template_string);
+
+    if verbose {
+        dbg!(&file_header);
+    }
+
     let template_string = without_header(&template_string);
     let original_file_name = template_item_path
         .file_name()
         .unwrap()
         .to_string_lossy()
         .to_string();
+
+    let output_dir: PathBuf = match file_header.get("output_dir") {
+        Some(dir) => {
+            let ret = expand_home_dir(dir.into());
+            println!("asdfas");
+            if verbose {
+                dbg!(&ret);
+            }
+
+            ret
+        }
+        None => current_dir()?,
+    };
+
     let suggested_file_name = file_header.get("filename").unwrap_or(&original_file_name);
+
+    // Start getting user input
     let new_file_name: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("What name should the new file be?")
         .with_initial_text(suggested_file_name)
@@ -81,7 +122,7 @@ fn write_item_to_disk_interactive(
         }
     }
     let rendered_template = Handlebars::new().render_template(&template_string, &variables)?;
-    let output_path = current_dir()?.join(new_file_name);
+    let output_path = output_dir.join(new_file_name);
     fs::write(&output_path, rendered_template)?;
     println!("Wrote {output_path:?} to disk");
     Ok(())
@@ -145,6 +186,8 @@ fn get_header(file_contents: &str) -> HashMap<String, String> {
     if let Some(raw) = raw {
         if let Ok(parsed) = parse_header(&raw) {
             return parsed;
+        } else {
+            println!("Failed to parse header");
         }
     }
 
@@ -199,6 +242,36 @@ fn test_parse_filename() {
     );
 
     assert_eq!(header.get("filename").unwrap(), "index.ts");
+}
+
+#[test]
+fn test_parse_arbitrary_headers() {
+    let header = get_header(
+        "
+    # templater.foo = 1
+    # templater.bar = baz
+    foo bar",
+    );
+
+    assert_eq!(header.get("foo").unwrap(), "1");
+    assert_eq!(header.get("bar").unwrap(), "baz");
+}
+
+#[test]
+fn test_parse_headers() {
+    let header = get_header(
+        "
+        # templater.output_dir = ~/foo/bar
+        # templater.filename = foo
+    foo",
+    );
+
+    dbg!(&header);
+
+    assert_eq!(header.len(), 2);
+
+    assert_eq!(header.get("output_dir").unwrap(), "~/foo/bar");
+    assert_eq!(header.get("filename").unwrap(), "foo");
 }
 
 #[test]

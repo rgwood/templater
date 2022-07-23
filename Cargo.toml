@@ -2,7 +2,7 @@
 default-run = "templater"
 edition = "2021"
 name = "templater"
-version = "0.3.0"
+version = "0.4.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,14 +12,16 @@ path = "src/scratch.rs"
 
 [dependencies]
 anyhow = "1.0.57"
-dialoguer = {version = "0.10.1", features = ["fuzzy-select"]}
+clap = { version = "3.2.14", features = ["derive"] }
+dialoguer = { version = "0.10.1", features = ["fuzzy-select"] }
+dirs = "4.0.0"
 handlebars = "4.3.0"
 home = "0.5.3"
 regex = "1.5.6"
 
 [profile.release]
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
-lto = true # Enable Link Time Optimization
-opt-level = 'z' # Optimize for size.
-panic = 'abort' # Abort on panic
+lto = true        # Enable Link Time Optimization
+opt-level = 'z'   # Optimize for size.
+panic = 'abort'   # Abort on panic
 # strip = true        # Strip symbols from binary. Big gains but idk if it's worth bad stack traces
