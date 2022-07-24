@@ -1,27 +1,54 @@
+mod clipboard;
 mod utils;
 
+use crate::clipboard::set_clipboard;
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
 use handlebars::{template::Template, Handlebars};
-use std::{collections::HashMap, env::current_dir, fs, path::PathBuf};
+use std::{
+    collections::HashMap,
+    env::current_dir,
+    fs::{self, read_to_string},
+    path::PathBuf,
+};
 use utils::expand_home_dir;
 
-/// Reilly's custom templating tool
-#[derive(Parser, Debug)]
+/// Reilly's custom templating/snippet tool
+#[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
-struct Args {
+struct Cli {
     #[clap(short, long, value_parser, default_value_t = false)]
     verbose: bool,
+
+    #[clap(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Generate file(s) from a template (default subcommand)
+    Template,
+    /// Copy a snippet to the clipboard
+    Snippet,
 }
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let cli = Cli::parse();
 
-    if args.verbose {
-        dbg!(&args);
+    if let Some(command) = &cli.command {
+        match command {
+            Commands::Template => template_command(&cli)?,
+            Commands::Snippet => snippet_command(&cli)?,
+        }
+    } else {
+        template_command(&cli)?;
     }
 
+    Ok(())
+}
+
+fn template_command(cli: &Cli) -> Result<()> {
     let mut variables = default_variables()?;
 
     let templates = get_templates(template_dir())?;
@@ -50,16 +77,56 @@ fn main() -> Result<()> {
 
     match selected_template {
         TemplateItem::File { path } => {
-            write_item_to_disk_interactive(path, &mut variables, args.verbose)?;
+            write_item_to_disk_interactive(path, &mut variables, cli.verbose)?;
         }
         TemplateItem::FileCollection { files, .. } => {
             for file in files {
-                write_item_to_disk_interactive(file, &mut variables, args.verbose)?;
+                write_item_to_disk_interactive(file, &mut variables, cli.verbose)?;
             }
         }
     }
 
     Ok(())
+}
+
+fn snippet_command(cli: &Cli) -> Result<()> {
+    let snippets = get_snippets(snippet_dir())?;
+    if cli.verbose {
+        dbg!(&snippets);
+    }
+
+    let snippet_names: Vec<String> = snippets.iter().map(|s| s.name.clone()).collect();
+
+    let selection_index = FuzzySelect::with_theme(&ColorfulTheme::default())
+        .with_prompt("Pick a snippet")
+        .default(0)
+        .items(&snippet_names)
+        .interact()
+        .expect("Failed to get user input");
+
+    let selected_snippet = &snippets[selection_index];
+    set_clipboard(&selected_snippet.contents)?;
+    println!("Copied snippet '{}' to clipboard", selected_snippet.name);
+
+    Ok(())
+}
+
+fn get_snippets(snippet_dir: PathBuf) -> Result<Vec<Snippet>> {
+    let files: Vec<_> = fs::read_dir(snippet_dir)?.filter_map(|t| t.ok()).collect();
+
+    let mut snippets: Vec<Snippet> = Vec::new();
+
+    for file in files {
+        let path = file.path();
+        let file_name = path.file_name().unwrap().to_string_lossy();
+        let contents = read_to_string(&path)?;
+        snippets.push(Snippet {
+            name: file_name.into_owned(),
+            contents: contents,
+        });
+    }
+
+    Ok(snippets)
 }
 
 fn write_item_to_disk_interactive(
@@ -156,6 +223,11 @@ fn default_variables() -> Result<HashMap<String, String>> {
 fn template_dir() -> PathBuf {
     let home_dir = home::home_dir().expect("could not get home dir");
     home_dir.join("dotfiles/templates")
+}
+
+fn snippet_dir() -> PathBuf {
+    let home_dir = home::home_dir().expect("could not get home dir");
+    home_dir.join("dotfiles/snippets")
 }
 
 fn without_header(file_contents: &str) -> String {
@@ -352,6 +424,12 @@ enum TemplateItem {
         directory_path: PathBuf,
         files: Vec<PathBuf>,
     },
+}
+
+#[derive(Debug)]
+struct Snippet {
+    name: String,
+    contents: String,
 }
 
 impl PartialEq for TemplateItem {
