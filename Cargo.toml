@@ -20,8 +20,8 @@ home = "0.5.3"
 regex = "1.5.6"
 
 [profile.release]
-codegen-units = 1 # Reduce number of codegen units to increase optimizations.
-lto = true        # Enable Link Time Optimization
-opt-level = 'z'   # Optimize for size.
-panic = 'abort'   # Abort on panic
+lto = true      # Enable Link Time Optimization
+opt-level = 'z' # Optimize for size.
+panic = 'abort' # Abort on panic
+# codegen-units = 1 # Set low to increase optimizations. Kills compile time though
 # strip = true        # Strip symbols from binary. Big gains but idk if it's worth bad stack traces
