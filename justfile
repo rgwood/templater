@@ -23,7 +23,18 @@ expected_filename := if os_family() == "windows" { "templater.exe" } else { "tem
 
 build-release:
     cargo build --release
-    @$"Build size: (ls target/release/{{ expected_filename }} | get size)"
+    ls target/release
 
 publish-to-local-bin: build-release
     cp target/release/{{ expected_filename }} ~/bin/
+
+build-all: build-linux-x64 build-linux-arm64
+
+build-linux-x64:
+    cross build --target x86_64-unknown-linux-gnu --release
+
+build-linux-arm64:
+    cross build --target aarch64-unknown-linux-gnu --release
+
+build-windows-on-linux:
+    cross build --target x86_64-pc-windows-gnu --release
