@@ -1,6 +1,6 @@
 ## Templater
 
-A simple CLI tool for creating files from templates, like when you'd rather not write out your usual makefile from scratch for the millionth time.
+A simple CLI tool for templates and code snippets. Useful when you'd rather not write out your usual makefile from scratch for the millionth time.
 
 ### Usage
 
@@ -8,7 +8,7 @@ Install `templater` somewhere on your path. Make sure you have some files in `~/
 
 Navigate to a directory where you want to create a file from a template, then run `templater`; it will walk you through any necessary decisions.
 
-### Deets
+### Templates
 
 Templater looks for text files in `~/dotfiles/templates`. Files can use Handlebars syntax `{{ foo }}` for variables. The following variables are set by default:
 
@@ -24,7 +24,12 @@ Files can be given key-value headers by adding lines like this to the top:
 # templater.filename = foo
 ```
 
+### Snippets
+
+`templater snippet` looks in `~/dotfiles/templates`. Pick a file and copy its contents to the CLI.
 
 ### To Do
 
  - [ ] Support overwriting files (after prompting the user)
+ - [ ] Fuzzy-find template+snippet contents, not just name
+ - [ ] Display template+snippet contents in a preview pane (may require replacing dialoguer)
