@@ -1,9 +1,10 @@
-mod clipboard;
+// mod clipboard;
 mod utils;
 
-use crate::clipboard::set_clipboard;
+// use crate::clipboard::set_clipboard;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use clipboard_anywhere::set_clipboard;
 use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
 use handlebars::{template::Template, Handlebars};
 use std::{

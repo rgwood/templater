@@ -2,7 +2,7 @@
 default-run = "templater"
 edition = "2021"
 name = "templater"
-version = "0.5.0"
+version = "0.5.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,15 +12,13 @@ path = "src/scratch.rs"
 
 [dependencies]
 anyhow = "1.0.57"
-base64 = "0.13.0"
 clap = { version = "3.2.14", features = ["derive"] }
-clipboard = "0.5.0"
+clipboard-anywhere = "0.1.0"
 dialoguer = { version = "0.10.1", features = ["fuzzy-select"] }
 dirs = "4.0.0"
 handlebars = "4.3.0"
 home = "0.5.3"
 regex = "1.5.6"
-wsl = "0.1.0"
 
 [profile.release]
 lto = true      # Enable Link Time Optimization

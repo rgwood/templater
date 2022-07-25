@@ -144,6 +144,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "clipboard-anywhere"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "103a528165b2eb5d9c0e341b576629afd3556d004c41199d59c2b2429f558377"
+dependencies = [
+ "anyhow",
+ "base64",
+ "clipboard",
+ "wsl",
+]
+
+[[package]]
 name = "clipboard-win"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -609,18 +621,16 @@ dependencies = [
 
 [[package]]
 name = "templater"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
- "base64",
  "clap",
- "clipboard",
+ "clipboard-anywhere",
  "dialoguer",
  "dirs",
  "handlebars",
  "home",
  "regex",
- "wsl",
 ]
 
 [[package]]
