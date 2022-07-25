@@ -106,7 +106,17 @@ fn snippet_command(cli: &Cli) -> Result<()> {
         .expect("Failed to get user input");
 
     let selected_snippet = &snippets[selection_index];
-    set_clipboard(&selected_snippet.contents)?;
+
+    // remove trailing newline so we can paste shell 1-liners without executing
+    let mut trimmed_contents = selected_snippet.contents.clone();
+    if trimmed_contents.ends_with('\n') {
+        trimmed_contents.pop();
+        if trimmed_contents.ends_with('\r') {
+            trimmed_contents.pop();
+        }
+    }
+
+    set_clipboard(&trimmed_contents)?;
     println!("Copied snippet '{}' to clipboard", selected_snippet.name);
 
     Ok(())
