@@ -146,8 +146,6 @@ fn write_item_to_disk_interactive(
     verbose: bool,
 ) -> Result<(), anyhow::Error> {
     let template_string = fs::read_to_string(template_item_path)?;
-    dbg!(&template_string);
-
     let file_header = get_header(&template_string);
 
     if verbose {
