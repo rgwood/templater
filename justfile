@@ -28,13 +28,15 @@ build-release:
 publish-to-local-bin: build-release
     cp target/release/{{ expected_filename }} ~/bin/
 
-build-all: build-linux-x64 build-linux-arm64
+publish-all: publish-linux-x64 publish-linux-arm64
 
-build-linux-x64:
+publish-linux-x64:
     cross build --target x86_64-unknown-linux-gnu --release
+    scp target/x86_64-unknown-linux-gnu/release/templater potato-pi:/mnt/QNAP1/rpm/dropbox/
 
-build-linux-arm64:
+publish-linux-arm64:
     cross build --target aarch64-unknown-linux-gnu --release
+    scp target/aarch64-unknown-linux-gnu/release/templater potato-pi:/mnt/QNAP1/rpm/dropbox/
 
 build-windows-on-linux:
     cross build --target x86_64-pc-windows-gnu --release
