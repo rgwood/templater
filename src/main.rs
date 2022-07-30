@@ -28,7 +28,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Generate file(s) from a template (default subcommand)
+    /// Generate file(s) from a template (default)
     Template,
     /// Copy a snippet to the clipboard
     Snippet,
