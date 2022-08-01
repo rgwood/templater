@@ -2,7 +2,7 @@
 default-run = "templater"
 edition = "2021"
 name = "templater"
-version = "0.5.3"
+version = "0.6.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,7 +13,7 @@ path = "src/scratch.rs"
 [dependencies]
 anyhow = "1.0.57"
 clap = { version = "3.2.14", features = ["derive"] }
-clipboard-anywhere = "0.1.0"
+clipboard-anywhere = "0.2.0"
 dialoguer = { version = "0.10.1", features = ["fuzzy-select"] }
 dirs = "4.0.0"
 handlebars = "4.3.0"
@@ -23,6 +23,6 @@ regex = "1.5.6"
 [profile.release]
 lto = true      # Enable Link Time Optimization
 opt-level = 'z' # Optimize for size.
-panic = 'abort' # Abort on panic
+# panic = 'abort' # Abort on panic
 # codegen-units = 1 # Set low to increase optimizations. Kills compile time though
 # strip = true        # Strip symbols from binary. Big gains but idk if it's worth bad stack traces

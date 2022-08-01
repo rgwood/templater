@@ -4,7 +4,7 @@ mod utils;
 // use crate::clipboard::set_clipboard;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use clipboard_anywhere::set_clipboard;
+use clipboard_anywhere::{get_clipboard, set_clipboard};
 use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
 use handlebars::{template::Template, Handlebars};
 use std::{
@@ -91,6 +91,7 @@ fn template_command(cli: &Cli) -> Result<()> {
 }
 
 fn snippet_command(cli: &Cli) -> Result<()> {
+    let mut variables = default_variables()?;
     let snippets = get_snippets(snippet_dir())?;
     if cli.verbose {
         dbg!(&snippets);
@@ -107,8 +108,40 @@ fn snippet_command(cli: &Cli) -> Result<()> {
 
     let selected_snippet = &snippets[selection_index];
 
+    let snippet_template = Template::compile(&selected_snippet.contents).unwrap();
+    for element in snippet_template.elements {
+        if let handlebars::template::TemplateElement::Expression(e) = element {
+            let name = e.name.as_name().expect("could not get name");
+
+            if name == "clipboard_contents" && !variables.contains_key(name) {
+                let clipboard_contents = match get_clipboard() {
+                    Ok(s) => s,
+                    Err(_) => Input::with_theme(&ColorfulTheme::default())
+                        .with_prompt("Could not get clipboard contents. Enter manually:")
+                        .allow_empty(true)
+                        .interact_text()?,
+                };
+                variables.insert(name.to_string(), clipboard_contents);
+            }
+
+            if !variables.contains_key(name) {
+                let msg = format!(
+                    "Variable '{name}' found in snippet but not set. What should it be set to?"
+                );
+                let value: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt(msg)
+                    .allow_empty(true)
+                    .interact_text()?;
+
+                variables.insert(name.to_string(), value);
+            }
+        }
+    }
+    let rendered_template =
+        Handlebars::new().render_template(&selected_snippet.contents, &variables)?;
+
     // remove trailing newline so we can paste shell 1-liners without executing
-    let mut trimmed_contents = selected_snippet.contents.clone();
+    let mut trimmed_contents = rendered_template.clone();
     if trimmed_contents.ends_with('\n') {
         trimmed_contents.pop();
         if trimmed_contents.ends_with('\r') {
@@ -117,7 +150,8 @@ fn snippet_command(cli: &Cli) -> Result<()> {
     }
 
     set_clipboard(&trimmed_contents)?;
-    println!("Copied snippet '{}' to clipboard", selected_snippet.name);
+    println!("Copied snippet '{}' to clipboard:", selected_snippet.name);
+    println!("{}", trimmed_contents);
 
     Ok(())
 }

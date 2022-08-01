@@ -28,8 +28,14 @@ Files can be given key-value headers by adding lines like this to the top:
 
 `templater snippet` looks in `~/dotfiles/templates`. Pick a file and copy its contents to the CLI.
 
+Snippets can optionally use a `clipboard_contents` variable:
+```
+wget {{clipboard_contents}}
+```
+
 ### To Do
 
  - [ ] Support overwriting files (after prompting the user)
  - [ ] Fuzzy-find template+snippet contents, not just name
  - [ ] Display template+snippet contents in a preview pane (may require replacing dialoguer)
+ - [ ] Add `clipboard_url` snippet variable that warns if clipboard contents are not a URL
