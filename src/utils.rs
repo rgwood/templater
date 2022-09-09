@@ -11,5 +11,4 @@ pub fn expand_home_dir<P: AsRef<Path> + ?Sized>(path: &P) -> PathBuf {
     home_dir()
         .unwrap()
         .join(path.strip_prefix("~").unwrap())
-        .into()
 }

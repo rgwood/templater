@@ -141,7 +141,7 @@ fn snippet_command(cli: &Cli) -> Result<()> {
         Handlebars::new().render_template(&selected_snippet.contents, &variables)?;
 
     // remove trailing newline so we can paste shell 1-liners without executing
-    let mut trimmed_contents = rendered_template.clone();
+    let mut trimmed_contents = rendered_template;
     if trimmed_contents.ends_with('\n') {
         trimmed_contents.pop();
         if trimmed_contents.ends_with('\r') {
@@ -167,7 +167,7 @@ fn get_snippets(snippet_dir: PathBuf) -> Result<Vec<Snippet>> {
         let contents = read_to_string(&path)?;
         snippets.push(Snippet {
             name: file_name.into_owned(),
-            contents: contents,
+            contents,
         });
     }
 
@@ -195,12 +195,10 @@ fn write_item_to_disk_interactive(
 
     let output_dir: PathBuf = match file_header.get("output_dir") {
         Some(dir) => {
-            let ret = expand_home_dir(dir.into());
-            println!("asdfas");
+            let ret = expand_home_dir(dir);
             if verbose {
                 dbg!(&ret);
             }
-
             ret
         }
         None => current_dir()?,
