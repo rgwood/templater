@@ -234,7 +234,7 @@ fn write_item_to_disk_interactive(
     let rendered_template = Handlebars::new().render_template(&template_string, &variables)?;
     let output_path = output_dir.join(new_file_name);
     fs::write(&output_path, rendered_template)?;
-    println!("Wrote {output_path:?} to disk");
+    println!("Wrote '{}' to disk", output_path.to_string_lossy());
     Ok(())
 }
 
