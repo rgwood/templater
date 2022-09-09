@@ -5,13 +5,13 @@ mod utils;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use clipboard_anywhere::{get_clipboard, set_clipboard};
-use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
+use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input, Confirm};
 use handlebars::{template::Template, Handlebars};
 use std::{
     collections::HashMap,
     env::current_dir,
     fs::{self, read_to_string},
-    path::PathBuf,
+    path::{PathBuf, Path},
 };
 use utils::expand_home_dir;
 
@@ -208,12 +208,28 @@ fn write_item_to_disk_interactive(
 
     let suggested_file_name = file_header.get("filename").unwrap_or(&original_file_name);
 
-    // Start getting user input
-    let new_file_name: String = Input::with_theme(&ColorfulTheme::default())
-        .with_prompt("What name should the new file be?")
-        .with_initial_text(suggested_file_name)
-        .interact_text()
-        .expect("failed to get file name");
+    let file_already_exists = Path::exists(&output_dir.join(suggested_file_name));
+
+    if file_already_exists {
+        let overwrite = Confirm::with_theme(&ColorfulTheme::default())
+        .with_prompt(format!("File '{suggested_file_name}' already exists. Overwrite?"))
+        .default(false)
+        .wait_for_newline(true)
+        .interact()?;
+
+        if !overwrite {
+            return Ok(());
+        }
+    }
+
+    // I don't actually find this useful; super rare that I want to override the default filename
+    // let new_file_name: String = Input::with_theme(&ColorfulTheme::default())
+    //     .with_prompt("What name should the new file be?")
+    //     .with_initial_text(suggested_file_name)
+    //     .interact_text()
+    //     .expect("failed to get file name");
+    let new_file_name: String = suggested_file_name.clone();
+
     let template = Template::compile(&template_string).unwrap();
     for element in template.elements {
         if let handlebars::template::TemplateElement::Expression(e) = element {
