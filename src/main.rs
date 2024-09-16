@@ -13,8 +13,6 @@ use std::{
     fs::{self, read_to_string},
     path::{PathBuf, Path},
 };
-#[cfg(unix)]
-use std::os::unix::fs::PermissionsExt;
 use utils::expand_home_dir;
 
 /// Reilly's custom templating/snippet tool
