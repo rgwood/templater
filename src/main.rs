@@ -13,6 +13,8 @@ use std::{
     fs::{self, read_to_string},
     path::{PathBuf, Path},
 };
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use utils::expand_home_dir;
 
 /// Reilly's custom templating/snippet tool
@@ -249,6 +251,24 @@ fn write_item_to_disk_interactive(
     let output_path = output_dir.join(new_file_name);
     fs::write(&output_path, rendered_template)?;
     println!("Wrote '{}' to disk", output_path.to_string_lossy());
+
+    // Check if the file should be set as executable
+    if let Some(set_executable) = file_header.get("set_executable") {
+        if set_executable.to_lowercase() == "true" {
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let mut perms = fs::metadata(&output_path)?.permissions();
+                perms.set_mode(0o755); // rwxr-xr-x
+                fs::set_permissions(&output_path, perms)?;
+                println!("Set '{}' as executable", output_path.to_string_lossy());
+            }
+            #[cfg(not(unix))]
+            {
+                println!("Warning: Setting file as executable is only supported on Unix-like systems");
+            }
+        }
+    }
     Ok(())
 }
 
