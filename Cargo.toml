@@ -2,7 +2,7 @@
 default-run = "templater"
 edition = "2021"
 name = "templater"
-version = "0.7.1"
+version = "0.7.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
