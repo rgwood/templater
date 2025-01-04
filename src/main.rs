@@ -1,17 +1,16 @@
 // mod clipboard;
 mod utils;
 
-// use crate::clipboard::set_clipboard;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use clipboard_anywhere::{get_clipboard, set_clipboard};
-use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input, Confirm};
+use dialoguer::{theme::ColorfulTheme, Confirm, FuzzySelect, Input};
 use handlebars::{template::Template, Handlebars};
 use std::{
     collections::HashMap,
     env::current_dir,
     fs::{self, read_to_string},
-    path::{PathBuf, Path},
+    path::{Path, PathBuf},
 };
 use utils::expand_home_dir;
 
@@ -187,11 +186,6 @@ fn write_item_to_disk_interactive(
     }
 
     let template_string = without_header(&template_string);
-    let original_file_name = template_item_path
-        .file_name()
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
 
     let output_dir: PathBuf = match file_header.get("output_dir") {
         Some(dir) => {
@@ -204,29 +198,26 @@ fn write_item_to_disk_interactive(
         None => current_dir()?,
     };
 
-    let suggested_file_name = file_header.get("filename").unwrap_or(&original_file_name);
+    let file_name = file_header.get("filename").cloned().unwrap_or_else(|| {
+        Input::with_theme(&ColorfulTheme::default())
+            .with_prompt("Provide a file name")
+            .interact_text()
+            .expect("failed to get file name")
+    });
 
-    let file_already_exists = Path::exists(&output_dir.join(suggested_file_name));
+    let file_already_exists = Path::exists(&output_dir.join(&file_name));
 
     if file_already_exists {
         let overwrite = Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("File '{suggested_file_name}' already exists. Overwrite?"))
-        .default(false)
-        .wait_for_newline(true)
-        .interact()?;
+            .with_prompt(format!("File '{file_name}' already exists. Overwrite?"))
+            .default(false)
+            .wait_for_newline(true)
+            .interact()?;
 
         if !overwrite {
             return Ok(());
         }
     }
-
-    // I don't actually find this useful; super rare that I want to override the default filename
-    // let new_file_name: String = Input::with_theme(&ColorfulTheme::default())
-    //     .with_prompt("What name should the new file be?")
-    //     .with_initial_text(suggested_file_name)
-    //     .interact_text()
-    //     .expect("failed to get file name");
-    let new_file_name: String = suggested_file_name.clone();
 
     let template = Template::compile(&template_string).unwrap();
     for element in template.elements {
@@ -246,7 +237,7 @@ fn write_item_to_disk_interactive(
         }
     }
     let rendered_template = Handlebars::new().render_template(&template_string, &variables)?;
-    let output_path = output_dir.join(new_file_name);
+    let output_path = output_dir.join(file_name);
     fs::write(&output_path, rendered_template)?;
     println!("Wrote '{}' to disk", output_path.to_string_lossy());
 
@@ -263,7 +254,9 @@ fn write_item_to_disk_interactive(
             }
             #[cfg(not(unix))]
             {
-                println!("Warning: Setting file as executable is only supported on Unix-like systems");
+                println!(
+                    "Warning: Setting file as executable is only supported on Unix-like systems"
+                );
             }
         }
     }
